@@ -1,1 +1,159 @@
+# Lifecycle Hooks in Unmounting Phase (LWC)
 
+The **Unmounting Phase** is the stage where a Lightning Web Component is being **removed from the DOM**. This phase has exactly one lifecycle hook:
+
+1. `disconnectedCallback()`
+
+---
+
+## disconnectedCallback() Method
+
+> Fires when a component is removed from the DOM.
+
+### Points to Remember
+- Fires when a component is removed from the DOM.
+- It flows from parent to child.
+- This callback method is specific to Lightning Web Components — it isn't from the HTML custom elements specification.
+
+### In Simple Words
+Whenever a component is taken off the page — for example, if you conditionally hide it using `if:true` / `if:false`, navigate away from the page, or programmatically remove it — LWC calls `disconnectedCallback()` right before it disappears. This is your chance to **clean up** anything the component was doing, such as:
+- Removing event listeners you manually added
+- Clearing `setInterval()` / `setTimeout()` timers
+- Unsubscribing from a Lightning Message Service channel or pub-sub event
+- Releasing any other resources the component was holding onto
+
+### Direction of Flow
+Just like `constructor()` and `connectedCallback()`, this hook flows **Parent → Child**. When a parent component (along with its child) is removed from the DOM, the parent's `disconnectedCallback()` fires first, followed by the child's.
+
+---
+
+## 🧩 Complete Working Example — Showing & Hiding a Child Component
+
+This example uses a **toggle button** in the parent to conditionally show/hide the child component using `if:true` / `if:false` directives. Removing the child from the DOM triggers its `disconnectedCallback()`.
+
+### Parent Component (`lifeCycleParent`)
+
+**lifeCycleParent.html**
+```html
+<template>
+    <lightning-card title="Life Cycle Hook Parent Card">
+        <div class="slds-m-around_medium">
+            <template if:false={isChildVisible}>
+                <lightning-button variant="brand" label="Show Child"
+                    title="Show Child" onclick={handleclick}
+                    class="slds-m-left_x-small"></lightning-button>
+            </template>
+
+            <template if:true={isChildVisible}>
+                <lightning-button variant="brand" label="Hide Child"
+                    title="Hide Child" onclick={handleclick}
+                    class="slds-m-left_x-small"></lightning-button>
+            </template>
+            <template if:true={isChildVisible}>
+                <c-life-cycle-child></c-life-cycle-child>
+            </template>
+        </div>
+    </lightning-card>
+</template>
+```
+
+**lifeCycleParent.js**
+```javascript
+import { LightningElement } from 'lwc';
+
+export default class LifeCycleParent extends LightningElement {
+    isChildVisible = false;
+    constructor() {
+        super();
+        console.log('Parent Constructor Called');
+    }
+    connectedCallback() {
+        console.log('Parent ConnectedCallback Called');
+    }
+    renderedCallback() {
+        console.log('Parent renderedCallback Called');
+    }
+    handleclick(event) {
+        this.isChildVisible = !this.isChildVisible;
+    }
+}
+```
+
+### Child Component (`lifeCycleChild`)
+
+**lifeCycleChild.js**
+```javascript
+import { LightningElement } from 'lwc';
+
+export default class LifeCycleChild extends LightningElement {
+    constructor() {
+        super();
+        console.log('Child Constructor Called');
+    }
+    connectedCallback() {
+        console.log('Child ConnectedCallback Called');
+    }
+    renderedCallback() {
+        console.log('Child renderedCallback Called');
+    }
+    disconnectedCallback() {
+        alert('Child DisconnectedCallback Called.');
+    }
+}
+```
+
+### 🖥️ How It Behaves
+
+1. **On page load** → `isChildVisible = false`, so the child isn't rendered. Button shows **"Show Child"**.
+2. **Click "Show Child"** → `isChildVisible` becomes `true`. The `<c-life-cycle-child>` is inserted into the DOM, so:
+   ```
+   Child Constructor Called
+   Child ConnectedCallback Called
+   Child renderedCallback Called
+   Parent renderedCallback Called
+   ```
+3. **Click "Hide Child"** → `isChildVisible` becomes `false`. The `<c-life-cycle-child>` is removed from the DOM, so:
+   ```
+   Child DisconnectedCallback Called.   (shown as an alert popup)
+   Parent renderedCallback Called
+   ```
+
+This demonstrates exactly when `disconnectedCallback()` fires — the moment the `if:true` condition turns false and LWC removes the child element from the DOM tree.
+
+---
+
+## 📚 Quick Recap
+
+| Hook | Phase | Direction | Typical Use |
+|---|---|---|---|
+| `disconnectedCallback()` | Unmounting | Parent → Child | Cleanup: remove listeners, clear timers, unsubscribe from events |
+
+---
+
+## 🎯 Interview Questions on Lifecycle Hooks – Unmounting Phase
+
+1. **When is `disconnectedCallback()` called?**
+   - It's called when a component is removed from the DOM — for example, through conditional rendering (`if:true`/`if:false`), navigating away, or programmatic removal.
+
+2. **Is `disconnectedCallback()` a standard part of the HTML custom elements specification?**
+   - No. Unlike some other lifecycle-related methods, `disconnectedCallback()` in this context is specific to Lightning Web Components, not inherited from the native custom elements spec.
+
+3. **What is the direction of flow for `disconnectedCallback()` — parent to child, or child to parent?**
+   - It flows **parent to child** — the parent's `disconnectedCallback()` executes before the child's when both are removed together.
+
+4. **What are common use cases for `disconnectedCallback()`?**
+   - Cleaning up resources: removing manually added event listeners, clearing intervals/timeouts, unsubscribing from Lightning Message Service (LMS) channels, or pub-sub events to prevent memory leaks.
+
+5. **What happens if you don't clean up subscriptions/listeners in `disconnectedCallback()`?**
+   - It can lead to memory leaks or unexpected behavior, since listeners/subscriptions may continue to reference a component that no longer exists in the DOM.
+
+6. **Can `disconnectedCallback()` be called multiple times for the same component instance?**
+   - It can be called each time the component is removed from the DOM. If the same instance were later re-inserted, `connectedCallback()` would fire again, and if removed again, `disconnectedCallback()` would fire again.
+
+7. **How can you demonstrate `disconnectedCallback()` in a simple example?**
+   - By conditionally rendering a child component using `if:true`/`if:false` directives controlled by a toggle button — toggling it to `false` removes the child from the DOM and triggers its `disconnectedCallback()`.
+
+8. **Which lifecycle hooks belong to the Unmounting Phase?**
+   - Only `disconnectedCallback()`.
+
+---
