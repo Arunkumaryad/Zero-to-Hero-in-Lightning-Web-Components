@@ -157,3 +157,8 @@ This demonstrates exactly when `disconnectedCallback()` fires — the moment the
    - Only `disconnectedCallback()`.
 
 ---
+
+### 🔗 How to Use This Document
+- Save this as `README.md` in your GitHub repository folder named **"Lifecycle Hooks in Unmounting Phase"**.
+- Add the reference screenshots alongside this file for visual context.
+- Optionally include the actual LWC component folders (`lifeCycleParent`, `lifeCycleChild`) as working sample code in the same repository.
